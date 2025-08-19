@@ -15,3 +15,7 @@ myenv/
 *.png
 *.npy
 *.ipynb
+
+backend/data
+CLAUDE.md
+/.claude
