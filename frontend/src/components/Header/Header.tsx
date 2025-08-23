@@ -16,6 +16,10 @@ export default function Header() {
   const { dataset, setDataset, neuralNetworkModel, setNeuralNetworkModel } =
     useBaseConfigStore();
 
+  const handleFileIconClick = () => {
+    window.open("https://arxiv.org/abs/2508.12730", "_blank");
+  };
+
   const handleGithubIconClick = () => {
     window.open(
       "https://github.com/gnueaj/Machine-Unlearning-Comparator",
@@ -85,7 +89,10 @@ export default function Header() {
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <FileText className="w-7 h-7 cursor-pointer" />
+        <FileText
+          onClick={handleFileIconClick}
+          className="w-7 h-7 cursor-pointer"
+        />
         <GithubIcon
           onClick={handleGithubIconClick}
           className="w-7 h-7 cursor-pointer"
