@@ -116,7 +116,11 @@ export default function ClassPlusButton({
                     </SelectTrigger>
                     <SelectContent>
                       {NEURAL_NETWORK_MODELS.map((model) => (
-                        <SelectItem key={model} value={model}>
+                        <SelectItem
+                          key={model}
+                          value={model}
+                          disabled={model.startsWith("V")}
+                        >
                           {model}
                         </SelectItem>
                       ))}
@@ -136,7 +140,11 @@ export default function ClassPlusButton({
                     </SelectTrigger>
                     <SelectContent>
                       {DATASETS.map((dataset) => (
-                        <SelectItem key={dataset} value={dataset}>
+                        <SelectItem
+                          key={dataset}
+                          value={dataset}
+                          disabled={dataset === "Fashion-MNIST"}
+                        >
                           {dataset}
                         </SelectItem>
                       ))}

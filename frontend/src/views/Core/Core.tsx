@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 
 import View from "../../components/common/View";
 import Title from "../../components/common/Title";
@@ -6,23 +6,21 @@ import Indicator from "../../components/common/Indicator";
 import Embedding from "./Embedding";
 import PrivacyAttack from "./PrivacyAttack";
 import { CONFIG } from "../../app/App";
-import { fetchFileData, fetchAllWeightNames } from "../../utils/api/common";
 import { useForgetClassStore } from "../../stores/forgetClassStore";
-import { useModelDataStore } from "../../stores/modelDataStore";
-import { Point } from "../../types/data";
-import { cn } from "../../utils/util";
+import {
+  useModelAExperiment,
+  useModelBExperiment,
+} from "../../hooks/useModelExperiment";
 
 const EMBEDDINGS = "embeddings";
 const ATTACK = "attack";
 
 export default function Core() {
   const forgetClass = useForgetClassStore((state) => state.forgetClass);
-  const modelA = useModelDataStore((state) => state.modelA);
-  const modelB = useModelDataStore((state) => state.modelB);
+  const modelAExperiment = useModelAExperiment();
+  const modelBExperiment = useModelBExperiment();
 
   const [displayMode, setDisplayMode] = useState(EMBEDDINGS);
-  const [modelAPoints, setModelAPoints] = useState<Point[]>([]);
-  const [modelBPoints, setModelBPoints] = useState<Point[]>([]);
 
   const isEmbeddingMode = displayMode === EMBEDDINGS;
   const forgetClassExist = forgetClass !== -1;
@@ -37,46 +35,6 @@ export default function Core() {
     }
   };
 
-  useEffect(() => {
-    async function loadModelAData() {
-      if (!forgetClassExist) return;
-
-      const ids: string[] = await fetchAllWeightNames(forgetClass);
-      const slicedIds = ids.map((id) => id.slice(0, -4));
-
-      if (!modelA || !slicedIds.includes(modelA)) return;
-
-      try {
-        const data = await fetchFileData(forgetClass, modelA);
-        setModelAPoints(data.points);
-      } catch (error) {
-        console.error(`Failed to fetch an model A data file: ${error}`);
-        setModelAPoints([]);
-      }
-    }
-    loadModelAData();
-  }, [forgetClass, forgetClassExist, modelA]);
-
-  useEffect(() => {
-    async function loadModelBData() {
-      if (!forgetClassExist) return;
-
-      const ids: string[] = await fetchAllWeightNames(forgetClass);
-      const slicedIds = ids.map((id) => id.slice(0, -4));
-
-      if (!modelB || !slicedIds.includes(modelB)) return;
-
-      try {
-        const data = await fetchFileData(forgetClass, modelB);
-        setModelBPoints(data.points);
-      } catch (error) {
-        console.error(`Error fetching model B file data: ${error}`);
-        setModelBPoints([]);
-      }
-    }
-    loadModelBData();
-  }, [forgetClass, forgetClassExist, modelB]);
-
   return (
     <View
       width={CONFIG.CORE_WIDTH}
@@ -88,31 +46,32 @@ export default function Core() {
         <Title
           title="Embedding Space"
           id={EMBEDDINGS}
-          className={cn(
-            "relative z-10 cursor-pointer px-1",
+          className={`relative z-10 cursor-pointer px-1 ${
             !isEmbeddingMode && "text-gray-400 border-none"
-          )}
+          }`}
           AdditionalContent={isEmbeddingMode && <UnderLine />}
           onClick={handleDisplayModeChange}
         />
         <Title
           title="Attack Simulation"
           id={ATTACK}
-          className={cn(
-            "relative z-10 cursor-pointer px-1",
+          className={`relative z-10 cursor-pointer px-1 ${
             isEmbeddingMode && "text-gray-400 border-none"
-          )}
+          }`}
           AdditionalContent={!isEmbeddingMode && <UnderLine />}
           onClick={handleDisplayModeChange}
         />
       </div>
-      {forgetClassExist ? (
+      {forgetClassExist && modelAExperiment && modelBExperiment ? (
         isEmbeddingMode ? (
-          <Embedding modelAPoints={modelAPoints} modelBPoints={modelBPoints} />
+          <Embedding
+            modelAPoints={modelAExperiment.points}
+            modelBPoints={modelBExperiment.points}
+          />
         ) : (
           <PrivacyAttack
-            modelAPoints={modelAPoints}
-            modelBPoints={modelBPoints}
+            modelAPoints={modelAExperiment.points}
+            modelBPoints={modelBExperiment.points}
           />
         )
       ) : (

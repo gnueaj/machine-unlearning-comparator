@@ -4,12 +4,11 @@ import { createRoot } from "react-dom/client";
 import AttackPlot from "./AttackPlot";
 import AttackSuccessFailure from "./AttackSuccessFailure";
 import Tooltip from "./Tooltip";
-import { API_URL } from "../../../constants/common";
+import { Prob } from "../../../types/embeddings";
+import { ImageWithLabel } from "../../../types/attack";
 import { useForgetClassStore } from "../../../stores/forgetClassStore";
 import { useAttackStateStore } from "../../../stores/attackStore";
 import { THRESHOLD_STRATEGIES } from "../../../constants/privacyAttack";
-import { Prob } from "../../../types/embeddings";
-import { fetchAllSubsetImages } from "../../../utils/api/attackSimulations";
 import { calculateZoom } from "../../../utils/util";
 import { useModelDataStore } from "../../../stores/modelDataStore";
 import { useThresholdStore } from "../../../stores/thresholdStore";
@@ -174,18 +173,7 @@ export default function AttackAnalytics({
       fetchControllerRef.current = controller;
 
       try {
-        const response = await fetch(
-          `${API_URL}/image/cifar10/${elementData.img_idx}`,
-          {
-            signal: controller.signal,
-          }
-        );
-
-        if (!response.ok) throw new Error("Failed to fetch tooltip data");
         if (controller.signal.aborted) return;
-
-        const blob = await response.blob();
-        const imageUrl = URL.createObjectURL(blob);
 
         const retrainedPoint = retrainPoints.find((point) => {
           return point[2] === elementData.img_idx;
@@ -212,7 +200,7 @@ export default function AttackAnalytics({
           <Tooltip
             width={CONFIG.TOOLTIP_WIDTH}
             height={CONFIG.TOOLTIP_HEIGHT}
-            imageUrl={imageUrl}
+            imageUrl={`${process.env.PUBLIC_URL}/cifar10_images/${elementData.img_idx}.png`}
             data={unlearnedPoint}
             barChartData={barChartData}
             isModelA={isModelA}
@@ -221,10 +209,6 @@ export default function AttackAnalytics({
         );
 
         showTooltip((event as any).nativeEvent || event, tooltipContent);
-
-        return () => {
-          URL.revokeObjectURL(imageUrl);
-        };
       } catch (error) {
         console.error(`Failed to fetch tooltip data: ${error}`);
       }
@@ -237,16 +221,25 @@ export default function AttackAnalytics({
   }, [isMetricEntropy, initializeThresholds]);
 
   useEffect(() => {
-    const fetchImage = async () => {
+    const fetchImages = async () => {
       try {
-        type Response = { images: Image[] };
-        const res: Response = await fetchAllSubsetImages(forgetClass);
-        setImages(res.images);
+        const res = await fetch(
+          `${process.env.PUBLIC_URL}/images_metadata.json`
+        );
+        const data = await res.json();
+        const images: ImageWithLabel[] = data.images;
+        const filteredImages = images.filter(
+          (img) => img.label === forgetClass
+        );
+        const finalImages: Image[] = filteredImages.map(
+          ({ label, ...rest }) => rest
+        );
+        setImages(finalImages);
       } catch (error) {
         console.error(`Error fetching subset images: ${error}`);
       }
     };
-    fetchImage();
+    fetchImages();
   }, [forgetClass]);
 
   const getLineChartData = useCallback(

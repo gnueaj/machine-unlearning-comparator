@@ -2,14 +2,13 @@ import { useState } from "react";
 
 import ClassButtons from "./ClassButtons";
 import ClassPlusButton from "./ClassPlusButton";
-import { Experiment, Experiments } from "../../types/data";
-import { useClasses } from "../../hooks/useClasses";
+import { CIFAR_10_CLASSES } from "../../constants/common";
+import { Experiments } from "../../types/data";
 import { useExperimentsStore } from "../../stores/experimentsStore";
 import { useForgetClassStore } from "../../stores/forgetClassStore";
-import { fetchAllExperimentsData } from "../../utils/api/modelScreening";
+import { loadExperimentData } from "../../constants/models";
 
 export default function ClassSelection() {
-  const classes = useClasses();
   const saveExperiments = useExperimentsStore((state) => state.saveExperiments);
   const selectedForgetClasses = useForgetClassStore(
     (state) => state.selectedForgetClasses
@@ -23,21 +22,11 @@ export default function ClassSelection() {
   const [open, setOpen] = useState(hasNoSelectedForgetClass);
 
   const fetchAndSaveExperiments = async (forgetClass: string) => {
-    const classIndex = classes.indexOf(forgetClass);
+    const classIndex = CIFAR_10_CLASSES.indexOf(forgetClass);
     setIsExperimentsLoading(true);
     try {
-      const allData: Experiments = await fetchAllExperimentsData(classIndex);
-
-      if ("detail" in allData) {
-        saveExperiments({});
-      } else {
-        Object.values(allData).forEach((experiment: Experiment) => {
-          if (experiment && "points" in experiment) {
-            delete experiment.points;
-          }
-        });
-        saveExperiments(allData);
-      }
+      const data: Experiments = await loadExperimentData(classIndex);
+      saveExperiments(data);
     } finally {
       setIsExperimentsLoading(false);
     }
